@@ -4,6 +4,8 @@ library(MASS)
 
 sample_size <- 10000 # e.g. number of observations
 dimension <- 50     # number of covariates
+
+# for covariate matrix X
 correlated_columns <- rbind(c(2,3), c(15,22)) #specify which pairs of columns are correlated. leave as rbind() if all columns are independent
 
 ############ Define functions ############
@@ -33,7 +35,7 @@ generate_correlation_matrix <- function(dimension, correlated_pairs=rbind()) {
   if(!is.null(nrow(correlated_pairs))) {
     for (j in 1:nrow(correlated_pairs)) {
       tuple <- correlated_pairs[j,]
-      correlation <- runif(1,-1,1) # generate a random correlation between 1 and -1
+      correlation <- runif(1,0.5,1) * sample(c(-1,1),1) # generate a random correlation between 0.5 and 1 and then make it either positive or negative (randomly)
       matrix_[tuple[1],tuple[2]] <- correlation
       matrix_[tuple[2],tuple[1]] <- correlation
     }
@@ -61,6 +63,38 @@ generate_means <- function(range, dimension) {
   means <- sample(range, dimension, replace=TRUE)
   return(means)
 }
+
+# given an input covariate matrix, generate an output matrix
+# with the specified output_dimension.
+# by default, columns are correlated.
+# use generate_output_matrix_w_uncorrelated to do the same thing but
+# to add the specified number of uncorrelated columns
+generate_output_matrix <- function(input_covariates, output_dimension) {
+  X <- data.matrix(input_covariates)
+  
+  input_dimension <- dim(X)[2]
+  obs <- dim(X)[1]
+  sd_input <- sd(X) / 2 # this is just a benchmark to make sure noise doesn't swamp signal here
+
+  B <- replicate(output_dimension, runif(input_dimension,0,1) * sample(c(-1,1),input_dimension, replace=TRUE)) # generate sandom correlations between 0.2 and 1 and then make it either positive or negative (randomly)
+  e <- replicate(output_dimension, rnorm(obs,0,sd_input))
+
+  Y <- (X %*% B) + e
+  return(Y)
+}
+
+generate_output_matrix_w_uncorrelated <- function(input_covariates, output_dimension, uncorrelated_columns) {
+
+    obs <- dim(X)[1]
+    sd_input <- sd(X) / 2 # this is just a benchmark to make sure noise doesn't swamp signal here
+  
+    basic_output <- generate_output_matrix(input_covariates, output_dimension)
+    
+    Y <- replicate(uncorrelated_columns, rnorm(obs,0,sd_input))
+    return(cbind(basic_output,Y))
+}
+
+generate_output_matrix 
 
 ############ Run simulation ############
 
