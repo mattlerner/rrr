@@ -104,7 +104,16 @@ simulated_Sigma <- generate_covariance_matrix(simulated_sd, simulated_correlatio
 simulated_means <- generate_means(1:20, dimension)
 
 simulation <- mvrnorm(n = sample_size, simulated_means, simulated_Sigma)
+
+# Covariates
 simulation_frame <- as.data.frame(simulation) # this can be sent to csv
+
+# for Y with correlated columns (2 in this case)
+Y_correlated_columns <- generate_output_matrix(simulation_frame, 2)
+
+# for Y with 2 correlated columns and 3 uncorrelated (2 in this case)
+Y_some_uncorrelated_columns <- generate_output_matrix_w_uncorrelated(simulation_frame, 2, 3)
+
 
 ############ Output ############
 
