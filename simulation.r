@@ -76,7 +76,7 @@ generate_output_matrix <- function(input_covariates, output_dimension) {
   obs <- dim(X)[1]
   sd_input <- sd(X) / 2 # this is just a benchmark to make sure noise doesn't swamp signal here
 
-  B <- replicate(output_dimension, runif(input_dimension,0,1) * sample(c(-1,1),input_dimension, replace=TRUE)) # generate sandom correlations between 0.2 and 1 and then make it either positive or negative (randomly)
+  B <- replicate(output_dimension, runif(input_dimension,0.2,1) * sample(c(-1,1),input_dimension, replace=TRUE)) # generate sandom correlations between 0.2 and 1 and then make it either positive or negative (randomly)
   e <- replicate(output_dimension, rnorm(obs,0,sd_input))
 
   Y <- (X %*% B) + e
