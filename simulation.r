@@ -80,7 +80,7 @@ generate_output_matrix <- function(input_covariates, output_dimension) {
   e <- replicate(output_dimension, rnorm(obs,0,sd_input))
 
   Y <- (X %*% B) + e
-  return(Y)
+  return(list(Y,B))
 }
 
 generate_output_matrix_w_uncorrelated <- function(input_covariates, output_dimension, uncorrelated_columns) {
@@ -94,11 +94,9 @@ generate_output_matrix_w_uncorrelated <- function(input_covariates, output_dimen
     return(cbind(basic_output,Y))
 }
 
-generate_output_matrix 
-
 ############ Run simulation ############
 
-simulated_correlations <- generate_correlation_matrix(dimension, correlated_columns)
+simulated_correlations <- generate_correlation_matrix(dimension, correlated_columns) # correlations of elements of X
 simulated_sd <- generate_sd(dimension)
 simulated_Sigma <- generate_covariance_matrix(simulated_sd, simulated_correlations)
 simulated_means <- generate_means(1:20, dimension)
@@ -109,7 +107,11 @@ simulation <- mvrnorm(n = sample_size, simulated_means, simulated_Sigma)
 simulation_frame <- as.data.frame(simulation) # this can be sent to csv
 
 # for Y with correlated columns (2 in this case)
-Y_correlated_columns <- generate_output_matrix(simulation_frame, 2)
+# This returns a list-- output values are in the first item
+# and correlations (B matrix) are in the second
+outputs <- generate_output_matrix(simulation_frame, 2)
+Y_correlated_columns <- outputs[1]
+B_coefficients <- outputs[2]
 
 # for Y with 2 correlated columns and 3 uncorrelated (2 in this case)
 Y_some_uncorrelated_columns <- generate_output_matrix_w_uncorrelated(simulation_frame, 2, 3)
