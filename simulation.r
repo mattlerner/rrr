@@ -1,12 +1,12 @@
 library(MASS)
 
-############ Define parameters for simulation ############
+setwd("/users/matt/desktop/qmss/multivariate statistical inference/group")
+
+############ Define parameters for all simulations ############
 
 sample_size <- 10000 # e.g. number of observations
-dimension <- 50     # number of covariates
-
-# for covariate matrix X
-correlated_columns <- rbind(c(2,3), c(15,22)) #specify which pairs of columns are correlated. leave as rbind() if all columns are independent
+x_dimension <- 10     # number of X covariates
+y_dimension <- 3 # desired number of Y columns
 
 ############ Define functions ############
 
@@ -14,7 +14,7 @@ correlated_columns <- rbind(c(2,3), c(15,22)) #specify which pairs of columns ar
 # as an argument. It then randomly selects standard deviations for each
 # dimension from the specified distribution (in this case rnorm(0,3))
 generate_sd <- function(dimension) {
-  sd_vector <- abs(rnorm(dimension, 0, 3))
+  sd_vector <- abs(rnorm(dimension, 0, 15))
   return(sd_vector)
 }
 
@@ -64,64 +64,69 @@ generate_means <- function(range, dimension) {
   return(means)
 }
 
+generate_coefficient_matrix <- function(covariate_dimension, desired_output_dimension, zeroes = FALSE) {
+  if (zeroes == TRUE) {
+    B <- replicate(desired_output_dimension, rep(0,covariate_dimension))
+    return(B)
+  } else {
+    B <- replicate(desired_output_dimension, runif(covariate_dimension,0.8,1) * sample(c(-1,1),covariate_dimension, replace=TRUE)) # generate sandom correlations between 0.2 and 1 and then make it either positive or negative (randomly)
+    return(B)
+  }
+}
+
 # given an input covariate matrix, generate an output matrix
 # with the specified output_dimension.
 # by default, columns are correlated.
 # use generate_output_matrix_w_uncorrelated to do the same thing but
 # to add the specified number of uncorrelated columns
-generate_output_matrix <- function(input_covariates, output_dimension) {
+generate_output_matrix <- function(input_covariates, output_dimension, coefficient_matrix_B) {
   X <- data.matrix(input_covariates)
   
   input_dimension <- dim(X)[2]
   obs <- dim(X)[1]
   sd_input <- sd(X) / 2 # this is just a benchmark to make sure noise doesn't swamp signal here
 
-  B <- replicate(output_dimension, runif(input_dimension,0.2,1) * sample(c(-1,1),input_dimension, replace=TRUE)) # generate sandom correlations between 0.2 and 1 and then make it either positive or negative (randomly)
+  B <- coefficient_matrix_B
   e <- replicate(output_dimension, rnorm(obs,0,sd_input))
 
   Y <- (X %*% B) + e
-  return(list(Y,B))
+  return(Y)
 }
 
-generate_output_matrix_w_uncorrelated <- function(input_covariates, output_dimension, uncorrelated_columns) {
+############ Case 1 - Independent X - Independent Y ############
 
-    obs <- dim(X)[1]
-    sd_input <- sd(X) / 2 # this is just a benchmark to make sure noise doesn't swamp signal here
-  
-    basic_output <- generate_output_matrix(input_covariates, output_dimension)
-    
-    Y <- replicate(uncorrelated_columns, rnorm(obs,0,sd_input))
-    return(cbind(basic_output,Y))
-}
+simulated_correlations_1 <- generate_correlation_matrix(x_dimension, c()) # correlations of elements of X
+simulated_sd_1 <- generate_sd(x_dimension)
+simulated_Sigma_1 <- generate_covariance_matrix(simulated_sd_1, simulated_correlations_1)
+simulated_means_1 <- generate_means(1:100, x_dimension)
 
-############ Run simulation ############
+X_1 <- mvrnorm(n = sample_size, simulated_means_1, simulated_Sigma_1)
+B_1 = generate_coefficient_matrix(x_dimension, y_dimension, zeroes=TRUE)
+Y_1 <- generate_output_matrix(X_1, 3, B_1)
 
-simulated_correlations <- generate_correlation_matrix(dimension, correlated_columns) # correlations of elements of X
-simulated_sd <- generate_sd(dimension)
-simulated_Sigma <- generate_covariance_matrix(simulated_sd, simulated_correlations)
-simulated_means <- generate_means(1:20, dimension)
-
-simulation <- mvrnorm(n = sample_size, simulated_means, simulated_Sigma)
-
-# Covariates
-simulation_frame <- as.data.frame(simulation) # this can be sent to csv
-
-# for Y with correlated columns (2 in this case)
-# This returns a list-- output values are in the first item
-# and correlations (B matrix) are in the second
-outputs <- generate_output_matrix(simulation_frame, 2)
-Y_correlated_columns <- outputs[1]
-B_coefficients <- outputs[2]
-
-# for Y with 2 correlated columns and 3 uncorrelated (2 in this case)
-Y_some_uncorrelated_columns <- generate_output_matrix_w_uncorrelated(simulation_frame, 2, 3)
+save(X_1, B_1, Y_1, file="case1.rdata")
 
 
-############ Output ############
 
-# Identify columns and associated correlations and means
-for (i in 1:dim(correlated_columns)[1]) {
-  current_pair <- correlated_columns[i,]
-  current_correlation <- simulated_correlations[current_pair[1], current_pair[2]]
-  print(paste("Columns",current_pair[1],"and",current_pair[2],"are correlated at",round(current_correlation,2)))
-}
+############ Case 2 - Independent X - Correlated Y ############
+
+X_2 <- X_1
+
+B_2 <- generate_coefficient_matrix(x_dimension, y_dimension)
+Y_2 <- generate_output_matrix(X_2, y_dimension, B_2)
+
+save(X_2, B_2, Y_2, file="case2.rdata")
+
+############ Case 3 - Correlated X - Correlated Y ############
+
+simulated_correlations_2 <- generate_correlation_matrix(x_dimension, rbind(c(1,2),c(1,3),c(2,3),c(3,4),c(4,5),c(2,4))) # correlations of elements of X
+simulated_sd_2 <- generate_sd(x_dimension)
+simulated_Sigma_2 <- generate_covariance_matrix(simulated_sd_2, simulated_correlations_2)
+simulated_means_2 <- generate_means(1:100, x_dimension)
+
+X_3 <- mvrnorm(n = sample_size, simulated_means_2, simulated_Sigma_2, tol=1)
+B_3 <- B_2
+Y_3 <- generate_output_matrix(X_3, y_dimension, B_3)
+
+save(X_3, B_3, Y_3, file="case3.rdata")
+
