@@ -35,7 +35,7 @@ generate_correlation_matrix <- function(dimension, correlated_pairs=rbind()) {
   if(!is.null(nrow(correlated_pairs))) {
     for (j in 1:nrow(correlated_pairs)) {
       tuple <- correlated_pairs[j,]
-      correlation <- runif(1,0.5,1) * sample(c(-1,1),1) # generate a random correlation between 0.5 and 1 and then make it either positive or negative (randomly)
+      correlation <- runif(1,0.7,1) * sample(c(-1,1),1) # generate a random correlation between 0.5 and 1 and then make it either positive or negative (randomly)
       matrix_[tuple[1],tuple[2]] <- correlation
       matrix_[tuple[2],tuple[1]] <- correlation
     }
@@ -69,7 +69,7 @@ generate_coefficient_matrix <- function(covariate_dimension, desired_output_dime
     B <- replicate(desired_output_dimension, rep(0,covariate_dimension))
     return(B)
   } else {
-    B <- replicate(desired_output_dimension, runif(covariate_dimension,0.8,1) * sample(c(-1,1),covariate_dimension, replace=TRUE)) # generate sandom correlations between 0.2 and 1 and then make it either positive or negative (randomly)
+    B <- replicate(desired_output_dimension, runif(covariate_dimension,0.7,1) * sample(c(-1,1),covariate_dimension, replace=TRUE)) # generate sandom correlations between 0.2 and 1 and then make it either positive or negative (randomly)
     return(B)
   }
 }
@@ -119,14 +119,14 @@ save(X_2, B_2, Y_2, file="case2.rdata")
 
 ############ Case 3 - Correlated X - Correlated Y ############
 
-simulated_correlations_2 <- generate_correlation_matrix(x_dimension, rbind(c(1,2),c(1,3),c(2,3),c(3,4),c(4,5),c(2,4))) # correlations of elements of X
-simulated_sd_2 <- generate_sd(x_dimension)
-simulated_Sigma_2 <- generate_covariance_matrix(simulated_sd_2, simulated_correlations_2)
-simulated_means_2 <- generate_means(1:100, x_dimension)
+simulated_correlations_3 <- generate_correlation_matrix(x_dimension, rbind(c(1,2),c(1,3),c(2,3),c(3,4),c(4,5),c(2,4))) # correlations of elements of X
+simulated_sd_3 <- generate_sd(x_dimension)
+simulated_Sigma_3 <- generate_covariance_matrix(simulated_sd_3, simulated_correlations_3)
+simulated_means_3 <- generate_means(1:100, x_dimension)
 
-X_3 <- mvrnorm(n = sample_size, simulated_means_2, simulated_Sigma_2, tol=1)
+X_3 <- mvrnorm(n = sample_size, simulated_means_3, simulated_Sigma_3, tol=1)
 B_3 <- B_2
 Y_3 <- generate_output_matrix(X_3, y_dimension, B_3)
 
-save(X_3, B_3, Y_3, file="case3.rdata")
+save(X_3, B_3, Y_3, simulated_correlations_3, file="case3.rdata")
 
